@@ -1,66 +1,121 @@
-
-go
-- AppUser (5 rows)
-insert into AppUser (Email, Password) values
-('mrm00045@mix.wvu.edu', 'Passw0rd!1'),
-('ac00012@mix.wvu.edu', 'Passw0rd!2'),
-('lb00098@mix.wvu.edu', 'Passw0rd!3'),
-('sturner@mail.wvu.edu', 'Passw0rd!4'),
-('nreed@mail.wvu.edu', 'Passw0rd!5');
-
-go
-
--- Room (5 rows)
-insert into Room (RoomNumber, Floor, Seats, Whiteboard, CurrentStatus) values
-('101', 1, 4, 1, 'Available'),
-('102', 1, 6, 0, 'Available'),
-('201', 2, 8, 1, 'In use'),
-('202', 2, 4, 0, 'Available'),
-('301', 3, 10, 1, 'Available');
+insert into Room (RoomNumber, Floor, Seats, Whiteboard) values
+('301', 3, 4, 1),
+('302', 3, 6, 0),
+('401', 4, 4, 1),
+('402', 4, 8, 0),
+('403', 4, 2, 1),
+('501', 5, 4, 1),
+('502', 5, 6, 0);
 
 go
 
--- Reservation (10 rows)
-insert into Reservation (AppUserID, ReservationDateTime, CheckInDateTime, CheckOutDateTime, TotalTime, ReservationStatus) values
-(1, '2026-09-10 10:00', '2026-09-10 10:02', '2026-09-10 10:58', 56, 'Completed'),
-(2, '2026-09-10 13:00', null, null, null, 'Confirmed'),
-(3, '2026-09-11 09:00', '2026-09-11 09:00', '2026-09-11 09:59', 59, 'Completed'),
-(4, '2026-09-11 15:00', null, null, null, 'Cancelled'),
-(5, '2026-09-12 11:00', null, null, null, 'Confirmed'),
-(1, '2026-09-12 14:00', null, null, null, 'Cancelled'),
-(2, '2026-09-13 08:00', '2026-09-13 08:03', '2026-09-13 09:00', 57, 'Completed'),
-(3, '2026-09-13 16:00', null, null, null, 'Confirmed'),
-(4, '2026-09-14 10:00', null, null, null, 'Confirmed'),
-(5, '2026-09-14 12:00', null, null, null, 'Confirmed');
+insert into Sensor (SensorName, TransmitterName, RoomID) values
+('LD2410C', 'ESP32-S3-WRoom-1', 1),
+('LD2410C', 'ESP32-S3-WRoom-2', 2),
+('LD2410C', 'ESP32-S3-WRoom-3', 3),
+('LD2410C', 'ESP32-S3-WRoom-4', 4),
+('LD2410C', 'ESP32-S3-WRoom-5', 5),
+('LD2410C', 'ESP32-S3-WRoom-6', 6),
+('LD2410C', 'ESP32-S3-WRoom-7', 7);
 
 go
 
--- RoomAvailability (25 rows -- 5 slots per room)
-insert into RoomAvailability (RoomID, ReservationID, AvailableDate, AvailableStartTime, AvailableEndTime, AvailabilityStatus) values
-(1, 1, '2026-09-10', '10:00', '11:00', 'Booked'),
-(1, null, '2026-09-10', '11:00', '12:00', 'Available'),
-(1, 6, '2026-09-12', '14:00', '15:00', 'Booked'),
-(1, null, '2026-09-13', '09:00', '10:00', 'Available'),
-(1, null, '2026-09-14', '13:00', '14:00', 'Available'),
-(2, 2, '2026-09-10', '13:00', '14:00', 'Booked'),
-(2, 7, '2026-09-13', '08:00', '09:00', 'Booked'),
-(2, null, '2026-09-10', '14:00', '15:00', 'Available'),
-(2, null, '2026-09-11', '10:00', '11:00', 'Available'),
-(2, null, '2026-09-14', '15:00', '16:00', 'Available'),
-(3, 3, '2026-09-11', '09:00', '10:00', 'Booked'),
-(3, 8, '2026-09-13', '16:00', '17:00', 'Booked'),
-(3, null, '2026-09-11', '10:00', '11:00', 'Available'),
-(3, null, '2026-09-12', '09:00', '10:00', 'Available'),
-(3, null, '2026-09-13', '11:00', '12:00', 'Available'),
-(4, 4, '2026-09-11', '15:00', '16:00', 'Booked'),
-(4, 9, '2026-09-14', '10:00', '11:00', 'Booked'),
-(4, null, '2026-09-10', '09:00', '10:00', 'Available'),
-(4, null, '2026-09-12', '13:00', '14:00', 'Available'),
-(4, null, '2026-09-13', '14:00', '15:00', 'Available'),
-(5, 5, '2026-09-12', '11:00', '12:00', 'Booked'),
-(5, 10, '2026-09-14', '12:00', '13:00', 'Booked'),
-(5, null, '2026-09-10', '08:00', '09:00', 'Available'),
-(5, null, '2026-09-11', '16:00', '17:00', 'Available'),
-(5, null, '2026-09-13', '10:00', '11:00', 'Available');
+insert into AppUser (FirstName, LastName, AppUserEmail, AppUserPassword, AppUserRole) values
+('John', 'Doe', 'student1@school.edu', 'hashed_password_1', 'User'),
+('Jane', 'Smith', 'student2@school.edu', 'hashed_password_2', 'User'),
+('Alice', 'Johnson', 'student3@school.edu', 'hashed_password_3', 'Admin'),
+('Charlie', 'Brown', 'student4@school.edu', 'hashed_password_4', 'User');
+
+go
+-- Create room availability for the next 7 days
+Create or alter PROCEDURE procCreateRoomAvailabilityForNext7Days
+AS
+BEGIN
+declare @numberOfDays int = 0;
+declare @CurrentDate date = getdate();
+while @numberOFDays < 7
+    execute procCreateRoomAvailabilityForOneDay @CurrentDate;
+    set @numberOfDays = @numberOfDays + 1;
+    set @CurrentDate = dateadd(day, 1, @CurrentDate);
+end;
 
 
+ -- execute procCreateRoomAvailabilityForNext7Days;
+
+go
+
+-- execute procCreateRoomAvailabilityForOneDay = getdate();
+
+create or alter PROCEDURE procCreateRoomAvailabilityForOneDay
+    @CurrentDate date
+
+AS
+begin 
+
+-- generate 15-minute RoomAvailability slots from 8 AM to 6 PM on 8/28 for every room
+declare @AvailableDate date = @CurrentDate; -- today's date, change as needed
+declare @SlotStart time;
+declare @RoomID int;
+
+declare room_cursor cursor for select RoomID from Room;
+open room_cursor;
+fetch next from room_cursor into @RoomID;
+
+while @@FETCH_STATUS = 0 -- loop through each room (1, 2, 3, 4)
+begin
+    set @SlotStart = '08:00:00';
+    while @SlotStart < '20:00:00' -- loop through each 15-min time slot from 8 AM to 8PM
+    begin
+        insert into RoomAvailability (RoomID, AvailableDate, StartTime, EndTime, AvailabilityStatus)
+        values (@RoomID, @AvailableDate, @SlotStart, dateadd(minute, 15, @SlotStart), 'Available');
+
+        set @SlotStart = dateadd(minute, 15, @SlotStart);
+    end
+    fetch next from room_cursor into @RoomID;
+end
+
+close room_cursor;
+deallocate room_cursor;
+end;
+go
+
+/*
+declare @CurrentDate date = getdate();
+execute procCreateRoomAvailabilityForOneDay @CurrentDate;
+select * from RoomAvailability
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+-- sample reservation: AppUser 1 books room 401 (4th floor) on 8/28 from 10:00 to 11:00
+declare @NewReservationID int;
+
+insert into Reservation (AppUserID, ReservationDateTime, ReservationStatus)
+values (1, getdate(), 'Reserved');
+
+set @NewReservationID = scope_identity();
+
+update RoomAvailability
+set AvailabilityStatus = 'Reserved', ReservationID = @NewReservationID
+where RoomID = (select RoomID from Room where RoomNumber = '401')
+    and AvailableDate = '2026-08-28'
+    and StartTime >= '10:00:00'
+    and EndTime <= '11:00:00';
+
+update Room
+set CurrentStatus = 'In Use'
+where RoomNumber = '401';
+
+go
+*/
