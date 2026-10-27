@@ -26,11 +26,13 @@ CREATE TABLE Sensor (
     SensorID     int identity(1,1),
     SensorName       nvarchar(50),   -- e.g. 'LD2410C'
     TransmitterName  nvarchar(50),   -- e.g. 'ESP32-S3-WROOM-1'
+    MacAddress       nvarchar(17), -- e.g. '00:1A:7D:DA:71:13'
     DateInstalled     date NOT NULL DEFAULT getdate(),
     DateRemoved       date NULL,
     RoomID     INT,    -- which room this device watches
     constraint PK_Sensor primary key (SensorID),
-    constraint FK_Sensor_Room foreign key (RoomID) references Room(RoomID)
+    constraint FK_Sensor_Room foreign key (RoomID) references Room(RoomID),
+    constraint UQ_Sensor_MacAddress unique (MacAddress)
 );
 
 go
@@ -88,10 +90,13 @@ create table RoomAvailability
     StartTime time not null,
     EndTime time not null,
     AvailabilityStatus nvarchar(20) not null default 'Available'
-        constraint CK_RoomAvailability_Status check (AvailabilityStatus in ('Available', 'Reserved')),
+        constraint CK_RoomAvailability_Status check (AvailabilityStatus in ('Available', 'Held', 'Reserved')),
     ReservationID int null, -- null until this 15-min slot is included in a reservation
+    HoldAppUserID int null,
+    HoldExpirationDateTime datetime2 null,
     constraint FK_RoomAvailability_Room foreign key (RoomID) references Room(RoomID),
     constraint FK_RoomAvailability_Reservation foreign key (ReservationID) references Reservation(ReservationID),
+    constraint FK_RoomAvailability_HoldAppUser foreign key (HoldAppUserID) references AppUser(AppUserID),
     constraint UQ_RoomAvailability_Slot unique (RoomID, AvailableDate, StartTime),
     constraint CK_RoomAvailability_TimeOrder check (EndTime > StartTime),
     constraint CK_RoomAvailability_15MinSlot check (datediff(minute, StartTime, EndTime) = 15) -- atomic 15-minute increments

@@ -4,13 +4,14 @@ insert into Room (RoomNumber, Floor, Seats, Whiteboard) values
 ('REH 5213', 5, 4, 1),
 ('REH 5225', 5, 6, 0);
 
+
 go
 
-insert into Sensor (SensorName, TransmitterName, RoomID) values
-('LD2410C', 'ESP32-S3-WROOM-1', 1),
-('LD2410C', 'ESP32-S3-WROOM-1', 2),
-('LD2410C', 'ESP32-S3-WROOM-1', 3),
-('LD2410C', 'ESP32-S3-WROOM-1', 4);
+insert into Sensor (SensorName, TransmitterName, MacAddress, RoomID) values
+('LD2410C', 'ESP32-S3-WROOM-1', '00:1A:7D:DA:71:13', 1),
+('LD2410C', 'ESP32-S3-WROOM-1', '00:1A:7D:DA:71:14', 2),
+('LD2410C', 'ESP32-S3-WROOM-1', '00:1A:7D:DA:71:15', 3),
+('LD2410C', 'ESP32-S3-WROOM-1', '00:1A:7D:DA:71:16', 4);
 
 
 go

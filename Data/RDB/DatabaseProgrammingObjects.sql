@@ -5,25 +5,28 @@ if OBJECT_ID('dbo.trgUpdateRoomStatus', 'TR') IS NOT NULL
     DROP TRIGGER dbo.trgUpdateRoomStatus; 
 
 if OBJECT_ID('dbo.procUpdateRoomStatus', 'P') IS NOT NULL
-    DROP PROCEDURE dbo.procUpdateRoomStatus
+    DROP PROCEDURE dbo.procUpdateRoomStatus;
 
 GO
 
 CREATE OR ALTER PROCEDURE procRecordEvent
-    @SensorID int,
+    @MacAddress nvarchar(17), -- e.g. '00:1A:7D:DA:71:13'
     @EventType nvarchar(5) -- 'Enter' or 'Exit'
 AS
 BEGIN
-    SET NOCOUNT ON;
 
-    INSERT INTO SensorLog (SensorID, EventType, ExitDateTime)
+    declare @SensorID int;
+
+    select @SensorID = SensorID from Sensor where MacAddress = @MacAddress;
+
+    INSERT INTO SensorLog (SensorID, EventType, EventDateTime)
     --VALUES (@SensorID, @EventType, GETDATE() AT TIME ZONE 'Eastern Standard Time');
     values (@SensorID, @EventType, SYSDATETIMEOFFSET() AT TIME ZONE 'Eastern Standard Time')
 END;
 GO
 
 /*
-select * from SensorLog;
+select * from SensorLog where SensorID = 2 order by EventDateTime desc;
 select * from Room;
 execute procRecordEvent 1, 'Enter';
 */
@@ -32,11 +35,11 @@ GO
 
 create or alter PROCEDURE procUpdateRoomStatus
     @RoomID int, 
-    @EventType NVARCHAR(5)
+    @RoomStatus NVARCHAR(20)
 AS
 BEGIN
     update Room
-    set CurrentStatus = @EventType
+    set CurrentStatus = @RoomStatus
     where RoomID = @RoomID
 
 end;
@@ -58,14 +61,14 @@ begin
     -- trigger action
     if (@EventType = 'Enter')
     begin
-    execute procUpdateRoomStatus @RoomID, 'Enter';
+    execute procUpdateRoomStatus @RoomID, 'Occupied';
         --update Room
         --set CurrentStatus = 'Occupied'
        -- where RoomID = @RoomID
     end
     else if (@EventType = 'Exit')
     begin
-    execute procUpdateRoomStatus @RoomID, 'Exit';
+    execute procUpdateRoomStatus @RoomID, 'Available';
        -- update Room
         --set CurrentStatus = 'Available'
         --where RoomID = @RoomID
@@ -73,16 +76,49 @@ begin
 
 end;
 
+GO
+
+CREATE OR ALTER PROCEDURE procHoldRoomAvailability
+(
+    @RoomAvailabilityID INT,
+    @AppUserID INT
+)
+AS
+BEGIN
+    UPDATE RoomAvailability
+    SET AvailabilityStatus = 'Held',
+        HoldAppUserID = @AppUserID,
+        HoldExpirationDateTime = DATEADD(MINUTE, 10, GETDATE())
+    WHERE RoomAvailabilityID = @RoomAvailabilityID
+      AND AvailabilityStatus = 'Available';
+END;
+GO
+
+GO
+
+CREATE OR ALTER PROCEDURE procReleaseExpiredHolds
+AS
+BEGIN
+    UPDATE RoomAvailability
+    SET AvailabilityStatus = 'Available',
+        HoldAppUserID = NULL,
+        HoldExpirationDateTime = NULL
+    WHERE AvailabilityStatus = 'Held'
+      AND HoldExpirationDateTime <= GETDATE();
+END;
+GO
+
+
 /*
 GO
 
 create or alter PROCEDURE procUpdateRoomStatus
     @RoomID int, 
-    @EventType NVARCHAR(5)
+    @RoomStatus NVARCHAR(20)
 AS
 BEGIN
     update Room
-    set CurrentStatus = @EventType
+    set CurrentStatus = @RoomStatus
     where RoomID = @RoomID
 
 end;
