@@ -1,6 +1,6 @@
 -- drop in FK-dependency order
 drop table if exists SensorLog;
-drop table if exists Sensor;
+drop table if exists SensorNode;
 drop table if exists RoomAvailability;
 drop table if exists Reservation;
 drop table if exists AppUser;
@@ -15,24 +15,26 @@ create table Room
     Seats int not null,
     Whiteboard bit not null, -- for true or false
     CurrentStatus nvarchar(20) not null default 'Available',
-    constraint CK_Room_CurrentStatus check (CurrentStatus in ('Available', 'Occupied')),
+    constraint CK_Room_CurrentStatus check (CurrentStatus in ('Available', 'Occupied', 'On Temporary Hold')),
     constraint PK_Room primary key (RoomID),
     constraint UQ_Room_RoomNumber unique (RoomNumber)
 );
 
 go
 
-CREATE TABLE Sensor (
-    SensorID     int identity(1,1),
+CREATE TABLE SensorNode (
+    SensorNodeID     int identity(1,1),
     SensorName       nvarchar(50),   -- e.g. 'LD2410C'
-    TransmitterName  nvarchar(50),   -- e.g. 'ESP32-S3-WROOM-1'
-    MacAddress       nvarchar(17), -- e.g. '00:1A:7D:DA:71:13'
+    SensorMacAddress       nvarchar(17), -- e.g. '00:1A:2B:3C:4D:5E'
+    Microcontroller  nvarchar(50),   -- e.g. 'ESP32-S3-WROOM-1'
+    MicrocontrollerMacAddress  nvarchar(17), -- e.g. '00:1A:2B:3C:4D:5E'
     DateInstalled     date NOT NULL DEFAULT getdate(),
     DateRemoved       date NULL,
     RoomID     INT,    -- which room this device watches
-    constraint PK_Sensor primary key (SensorID),
+    constraint PK_SensorNode primary key (SensorNodeID),
     constraint FK_Sensor_Room foreign key (RoomID) references Room(RoomID),
-    constraint UQ_Sensor_MacAddress unique (MacAddress)
+    constraint UQ_SensorMacAddress unique (SensorMacAddress),
+    constraint UQ_MicrocontrollerMacAddress unique (MicrocontrollerMacAddress)
 );
 
 go
@@ -40,12 +42,12 @@ go
 create table SensorLog
 (
     SensorLogID int identity(1,1),
-    SensorID int not null,
+    SensorNodeID int not null,
     EventType nvarchar(5) not null, -- e.g. 'Enter', 'Exit'
     EventDateTime datetime2 not null,
     constraint PK_SensorLog primary key (SensorLogID),
     constraint CK_SensorLog_EventType check (EventType in ('Enter', 'Exit')),
-    constraint FK_SensorLog_Sensor foreign key (SensorID) references Sensor(SensorID)
+    constraint FK_SensorLog_SensorNode foreign key (SensorNodeID) references SensorNode(SensorNodeID)
 )
 
 go
@@ -90,13 +92,10 @@ create table RoomAvailability
     StartTime time not null,
     EndTime time not null,
     AvailabilityStatus nvarchar(20) not null default 'Available'
-        constraint CK_RoomAvailability_Status check (AvailabilityStatus in ('Available', 'Held', 'Reserved')),
+        constraint CK_RoomAvailability_Status check (AvailabilityStatus in ('Available', 'Reserved', 'Held')),
     ReservationID int null, -- null until this 15-min slot is included in a reservation
-    HoldAppUserID int null,
-    HoldExpirationDateTime datetime2 null,
     constraint FK_RoomAvailability_Room foreign key (RoomID) references Room(RoomID),
     constraint FK_RoomAvailability_Reservation foreign key (ReservationID) references Reservation(ReservationID),
-    constraint FK_RoomAvailability_HoldAppUser foreign key (HoldAppUserID) references AppUser(AppUserID),
     constraint UQ_RoomAvailability_Slot unique (RoomID, AvailableDate, StartTime),
     constraint CK_RoomAvailability_TimeOrder check (EndTime > StartTime),
     constraint CK_RoomAvailability_15MinSlot check (datediff(minute, StartTime, EndTime) = 15) -- atomic 15-minute increments
