@@ -1,0 +1,5 @@
+gunicorn
+fastapi
+uvicorn[standard]
+python-dotenv
+pymssql

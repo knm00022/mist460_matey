@@ -5,6 +5,7 @@ drop table if exists RoomAvailability;
 drop table if exists Reservation;
 drop table if exists AppUser;
 drop table if exists Room;
+
 go
 
 create table Room
@@ -14,8 +15,8 @@ create table Room
     Floor int not null,
     Seats int not null,
     Whiteboard bit not null, -- for true or false
-    CurrentStatus nvarchar(20) not null default 'Available',
-    constraint CK_Room_CurrentStatus check (CurrentStatus in ('Available', 'Occupied', 'On Temporary Hold')),
+    RoomOccupancyStatus nvarchar(20) not null default 'Vacant',
+    constraint CK_Room_RoomOccupancyStatus check (RoomOccupancyStatus in ('Vacant', 'Occupied')),
     constraint PK_Room primary key (RoomID),
     constraint UQ_Room_RoomNumber unique (RoomNumber)
 );
@@ -91,8 +92,8 @@ create table RoomAvailability
     AvailableDate date not null,
     StartTime time not null,
     EndTime time not null,
-    AvailabilityStatus nvarchar(20) not null default 'Available'
-        constraint CK_RoomAvailability_Status check (AvailabilityStatus in ('Available', 'Reserved', 'Held')),
+    RoomReservationAvailabilityStatus nvarchar(20) not null default 'Available'
+        constraint CK_RoomReservationAvailability_Status check (RoomReservationAvailabilityStatus in ('Available', 'Reserved', 'Held')),
     ReservationID int null, -- null until this 15-min slot is included in a reservation
     constraint FK_RoomAvailability_Room foreign key (RoomID) references Room(RoomID),
     constraint FK_RoomAvailability_Reservation foreign key (ReservationID) references Reservation(ReservationID),
@@ -100,4 +101,3 @@ create table RoomAvailability
     constraint CK_RoomAvailability_TimeOrder check (EndTime > StartTime),
     constraint CK_RoomAvailability_15MinSlot check (datediff(minute, StartTime, EndTime) = 15) -- atomic 15-minute increments
 );
-

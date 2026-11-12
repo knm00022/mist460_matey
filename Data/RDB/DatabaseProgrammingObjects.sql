@@ -1,17 +1,59 @@
 if OBJECT_ID('dbo.procRecordEvent', 'P') IS NOT NULL
     DROP PROCEDURE dbo.procRecordEvent;
 
-if OBJECT_ID('dbo.trgUpdateRoomStatus', 'TR') IS NOT NULL
-    DROP TRIGGER dbo.trgUpdateRoomStatus;
+if OBJECT_ID('dbo.trgUpdateRoomOccupancyStatus', 'TR') IS NOT NULL
+    DROP TRIGGER dbo.trgUpdateRoomOccupancyStatus;
 
-if OBJECT_ID('dbo.procUpdateRoomStatus', 'P') IS NOT NULL
-	DROP PROCEDURE dbo.procUpdateRoomStatus;
+if OBJECT_ID('dbo.procUpdateRoomOccupancyStatus', 'P') IS NOT NULL
+	DROP PROCEDURE dbo.procUpdateRoomOccupancyStatus;
+
+if OBJECT_ID('dbo.procGetOccupancyStatusForAllRooms', 'P') IS NOT NULL
+	DROP PROCEDURE dbo.procGetOccupancyStatusForAllRooms;
 
 if OBJECT_ID('dbo.procCreateRoomAvailabilityForOneDay', 'P') IS NOT NULL
 	DROP PROCEDURE dbo.procCreateRoomAvailabilityForOneDay;
 
 if OBJECT_ID('dbo.procCreateRoomAvailabilityBetweenDates', 'P') IS NOT NULL
 	DROP PROCEDURE dbo.procCreateRoomAvailabilityBetweenDates;
+
+if OBJECT_ID('dbo.procMakeReservation', 'P') IS NOT NULL
+	DROP PROCEDURE dbo.procMakeReservation;
+
+if OBJECT_ID('dbo.procAddReservationDetails', 'P') IS NOT NULL
+	DROP PROCEDURE dbo.procAddReservationDetails;
+
+if Object_ID('dbo.procGetUserReservations', 'P') IS NOT NULL
+	DROP PROCEDURE dbo.procGetUserReservations;
+
+if Object_ID('dbo.procGetReservationDetails', 'P') IS NOT NULL
+	DROP PROCEDURE dbo.procGetReservationDetails;
+
+if OBJECT_ID('dbo.procCancelReservation', 'P') IS NOT NULL
+	DROP PROCEDURE dbo.procCancelReservation;
+
+if OBJECT_ID('dbo.trgUpdateRoomReservationAvailabilityOnCancel', 'TR') IS NOT NULL
+	DROP TRIGGER dbo.trgUpdateRoomReservationAvailabilityOnCancel;
+
+if OBJECT_ID('dbo.procCheckIn', 'P') IS NOT NULL
+	DROP PROCEDURE dbo.procCheckIn;
+
+if OBJECT_ID('dbo.procCheckOut', 'P') IS NOT NULL
+	DROP PROCEDURE dbo.procCheckOut;
+
+if Object_ID('dbo.procCheckRoomAvailability', 'P') IS NOT NULL
+	DROP PROCEDURE dbo.procCheckRoomAvailability;
+
+if Object_ID('dbo.procRegisterUser', 'P') IS NOT NULL
+	DROP PROCEDURE dbo.procRegisterUser;
+
+if Object_ID('dbo.procAuthenticateUser', 'P') IS NOT NULL
+	DROP PROCEDURE dbo.procAuthenticateUser;
+
+if Object_ID('dbo.procGetReservationUsage', 'P') IS NOT NULL
+	DROP PROCEDURE dbo.procGetReservationUsage;
+
+if Object_ID('dbo.procGetSensorUsage', 'P') IS NOT NULL
+	DROP PROCEDURE dbo.procGetSensorUsage;
 
 go
 
@@ -33,7 +75,7 @@ begin
         set @SlotStart = '08:00:00';
         while @SlotStart < '20:00:00' -- loop through each 15-minute slot (8:00, 8:15, 8:30, ..., 19:45)
         begin
-            insert into RoomAvailability (RoomID, AvailableDate, StartTime, EndTime, AvailabilityStatus)
+            insert into RoomAvailability (RoomID, AvailableDate, StartTime, EndTime, RoomReservationAvailabilityStatus)
             values (@RoomID, @AvailableDate, @SlotStart, dateadd(minute, 15, @SlotStart), 'Available');
 
             set @SlotStart = dateadd(minute, 15, @SlotStart);
@@ -73,7 +115,7 @@ begin
         set @currentDate = dateadd(day, 1, @currentDate);
     end
 end
--- execute procCreateRoomAvailabilityBetweenDates '2026-10-24', '2026-10-31';
+-- execute procCreateRoomAvailabilityBetweenDates '2026-11-11', '2026-11-14';
 -- select * from RoomAvailability;
 
 
@@ -106,19 +148,19 @@ execute procRecordEvent '58:E6:C5:73:31:74', 'Exit'; //2
 
 go
 
-create or alter PROCEDURE procUpdateRoomStatus
+create or alter PROCEDURE procUpdateRoomOccupancyStatus
 	@RoomID int,
-	@RoomStatus nvarchar(20)
+	@RoomOccupancyStatus nvarchar(20)
 AS
 begin
 		update Room
-		set CurrentStatus = @RoomStatus
+		set RoomOccupancyStatus = @RoomOccupancyStatus
 		where RoomID = @RoomID
 end;
 
 go
 
-create or alter trigger trgUpdateRoomStatus
+create or alter trigger trgUpdateRoomOccupancyStatus
 on SensorLog
 after insert
 as
@@ -133,13 +175,23 @@ begin
 	-- trigger action
 	if (@EventType = 'Enter')
 	begin
-		execute procUpdateRoomStatus @RoomID, 'Occupied'; -- 'Enter';
+		execute procUpdateRoomOccupancyStatus @RoomID, 'Occupied'; -- 'Enter';
 	end
 	else if (@EventType = 'Exit')
 	begin
-		execute procUpdateRoomStatus @RoomID, 'Available'; -- 'Exit';
+		execute procUpdateRoomOccupancyStatus @RoomID, 'Vacant'; -- 'Exit';
 	end
 end
+
 go
 
--- execute procUpdateRoomStatus 1, 'Enter';
+-- execute procUpdateRoomOccupancyStatus 1, 'Enter';
+
+create or alter PROCEDURE procGetOccupancyStatusForAllRooms
+AS
+begin
+	select RoomID, RoomOccupancyStatus
+	from Room;
+end;
+-- execute procGetOccupancyStatusForAllRooms;
+
