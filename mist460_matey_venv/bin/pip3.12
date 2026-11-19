@@ -1,0 +1,6 @@
+#!/Users/kaylamatey/MIST460/mist460_matey/mist460_matey_venv/bin/python3.12
+import sys
+from pip._internal.cli.main import main
+if __name__ == '__main__':
+    sys.argv[0] = sys.argv[0].removesuffix('.exe')
+    sys.exit(main())

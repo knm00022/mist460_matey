@@ -1,5 +1,5 @@
 gunicorn
 fastapi
-uvicorn[standard]
+uvicorn-worker
 python-dotenv
 pymssql

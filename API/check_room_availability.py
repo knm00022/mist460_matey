@@ -1,13 +1,12 @@
 from get_db_connection import get_db_connection
-from typing import Optional
 
 def check_room_availability(
-        available_date: Optional[str] = None,
-        start_time: Optional[str] = None,
-        end_time: Optional[str] = None,
-        floor: Optional[int] = None,
-        seats: Optional[int] = None,
-        whiteboard: Optional[bool] = None
+        available_date: str | None = None,
+        start_time: str | None = None,
+        end_time: str | None = None,
+        floor: int | None = None,
+        seats: int | None = None,
+        whiteboard: bool | None = None,
     ):
     conn = get_db_connection()
     cursor = conn.cursor(as_dict=True)

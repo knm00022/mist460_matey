@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/9ecf8afd-36c0-41d1-aa65-ce1ec2dbbf07/resourceGroups/mist460-resourcegroup-matey/providers/Microsoft.Web/sites/study-room-sniffer",
+    "appService.deploySubpath": "API"
+}
